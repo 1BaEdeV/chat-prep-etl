@@ -1,0 +1,26 @@
+name: "Branch Naming Audit"
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Branch Name
+        run: |
+          # Регулярное выражение для веток: feat/, fix/, research/, docs/
+          # Имя должно быть в нижнем регистре, может содержать цифры и дефис
+          PATTERN="^(feat|fix|research|docs)\/[a-z0-9-]+$"
+          BRANCH_NAME="${{ github.head_ref }}"
+          
+          if [[ ! $BRANCH_NAME =~ $PATTERN ]]; then
+            echo "Error: Неверное имя ветки: '$BRANCH_NAME'"
+            echo "Имя ветки должно соответствовать стандарту: {тип}/{описание}"
+            echo "Допустимые типы: feat, fix, research, docs"
+            echo "Пример: feat/parser-json-logic"
+            exit 1
+          else
+            echo "Имя ветки соответствует стандарту."
+          fi
