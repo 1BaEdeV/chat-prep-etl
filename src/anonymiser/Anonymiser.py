@@ -32,7 +32,7 @@ class TelegramAnonymizer:
 
         self.mapping = {}
         self.entities = {}
-        self.counters = {"PER": 1, "LOC": 1, "ORG": 1, "PHONE": 1, "EMAIL": 1, "URL": 1}
+        self.counters = {"PER": 1, "LOC": 1, "ORG": 1, "PHONE": 1, "EMAIL": 1, "URL": 1, "USERID": 1}
 
     def get_label(self, text, entity_type):
         if not text: return text
@@ -57,8 +57,12 @@ class TelegramAnonymizer:
         text = re.sub(url_pattern, lambda m: self.get_label(m.group(), "URL"), text)
 
         # 3. Телефоны
-        phone_pattern = r'\+?\d[\d\-\(\) ]{7,14}\d'
+        phone_pattern = r'(?:\+7|8)[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}'
         text = re.sub(phone_pattern, lambda m: self.get_label(m.group(), "PHONE"), text)
+
+        # 4. User id
+        id_pattern = r'user\d+'
+        text = re.sub(id_pattern, lambda m: self.get_label(m.group(), "USERID"), text)
 
         return text
 
@@ -89,45 +93,30 @@ class TelegramAnonymizer:
         for entity in self.entities.keys():
             if entity not in text.lower(): continue
             text = re.sub(re.escape(entity), self.entities[entity], text, flags=re.IGNORECASE)
-            # text = re.sub(entity, self.entities[entity_name], text)
 
         return text
 
-    def first_step(self, data):
+    def zero_step(self, data):
         for msg in data.get('messages', []):
-            # Анонимизация основного контента
-            if 'text' in msg:
-                t = msg['text']
-                if isinstance(t, str):
-                    msg['text'] = self.process_text(t)
-                elif isinstance(t, list):
-                    for item in t:
-                        if isinstance(item, dict) and 'text' in item:
-                            item['text'] = self.process_text(item['text'])
-                        elif isinstance(item, str):
-                            idx = t.index(item)
-                            t[idx] = self.process_text(item)
-
             # Анонимизация метаданных отправителя
             for field in ['from', 'actor']:
                 if field in msg and isinstance(msg[field], str):
                     msg[field] = self.get_label(msg[field], "PER")
         return data
 
-    def second_step(self, data):
-        for msg in data.get('messages', []):
-            # Анонимизация основного контента
-            if 'text' in msg:
-                t = msg['text']
-                if isinstance(t, str):
-                    msg['text'] = self.process_text_again(t)
-                elif isinstance(t, list):
-                    for item in t:
-                        if isinstance(item, dict) and 'text' in item:
-                            item['text'] = self.process_text_again(item['text'])
-                        elif isinstance(item, str):
-                            idx = t.index(item)
-                            t[idx] = self.process_text_again(item)
+    def anonymise(self, data, process_text_fn):
+        if isinstance(data, str):
+            return process_text_fn(data)
+        for key in data:
+            val = data[key]
+            if isinstance(val, str):
+                data[key] = process_text_fn(val)
+            elif isinstance(val, dict):
+                data[key] = self.anonymise(val, process_text_fn)
+            elif isinstance(val, list):
+                for i in range(len(val)):
+                    val[i] = self.anonymise(val[i], process_text_fn)
+
         return data
 
     def run(self, input_file, output_file):
@@ -138,15 +127,16 @@ class TelegramAnonymizer:
             print(f"Ошибка: Файл {input_file} не найден.")
             return
 
-        data = self.first_step(data)
-        data = self.second_step(data)
+        data = self.zero_step(data)
+        data = self.anonymise(data, self.process_text)
+        data = self.anonymise(data, self.process_text_again)
 
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
         print(f"Обработано и сохранено в {output_file}")
         # вывод найденных сущностей с ключами
-        # print(self.entities)
+        print(self.entities)
 
 
 def main():
@@ -158,7 +148,7 @@ def main():
         print("Слишком много аргументов")
         return
 
-    in_file = Path(argv[0]) if len(argv) else Path("data/samples/example_tg_import.json")
+    in_file = Path(argv[0]) if len(argv) else Path(r"...")
     out_file = Path(argv[1]) if len(argv) == 2 else in_file.with_name(in_file.stem + "_anonymised" + in_file.suffix)
 
     anonymizer = TelegramAnonymizer()
