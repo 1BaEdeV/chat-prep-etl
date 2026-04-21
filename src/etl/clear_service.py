@@ -1,135 +1,93 @@
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": 5,
-   "id": "4377d303-bd92-4233-832a-b8b71ea70b19",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "import re\n",
-    "import emoji\n",
-    "\n",
-    "def remove_emoji(text):\n",
-    "    return emoji.replace_emoji(text, replace='')\n",
-    "\n",
-    "    \n",
-    "# ----------------------------\n",
-    "# Очистка текста\n",
-    "# ----------------------------\n",
-    "def clean_text(text):\n",
-    "    if not text:\n",
-    "        return \"\"\n",
-    "\n",
-    "    # удалить эмодзи\n",
-    "    text = remove_emoji(text)\n",
-    "\n",
-    "    # нижний регистр\n",
-    "    text = text.lower()\n",
-    "\n",
-    "    # убрать переносы строк\n",
-    "    text = re.sub(r'\\n+', ' ', text)\n",
-    "\n",
-    "    # убрать повторяющиеся символы (!!! → !)\n",
-    "    text = re.sub(r'([!?.,])\\1+', r'\\1', text)\n",
-    "\n",
-    "    # убрать лишние пробелы\n",
-    "    text = re.sub(r'\\s+', ' ', text).strip()\n",
-    "\n",
-    "    return text\n",
-    "\n",
-    "\n",
-    "# ----------------------------\n",
-    "# Замена сущностей\n",
-    "# ----------------------------\n",
-    "def replace_entities(text):\n",
-    "    if not text:\n",
-    "        return \"\"\n",
-    "\n",
-    "    # ссылки\n",
-    "    text = re.sub(r'http\\S+', '[LINK]', text)\n",
-    "\n",
-    "    # email\n",
-    "    text = re.sub(r'\\S+@\\S+', '[EMAIL]', text)\n",
-    "\n",
-    "    # файлы (примерно)\n",
-    "    text = re.sub(r'\\S+\\.(pdf|docx|zip|png|jpg)', '[FILE]', text)\n",
-    "\n",
-    "    return text\n",
-    "\n",
-    "\n",
-    "# ----------------------------\n",
-    "# Обработка одного сообщения\n",
-    "# ----------------------------\n",
-    "def process_message(msg):\n",
-    "    #извлекаем текст из поля\n",
-    "    text = msg.get(\"text\", \"\")\n",
-    "\n",
-    "    #проверка явл ли текст строко, если нет меняем на строку\n",
-    "    if not isinstance(text, str):\n",
-    "        text = str(text)\n",
-    "\n",
-    "    #чистим текст\n",
-    "    text = replace_entities(text)\n",
-    "    text = clean_text(text)\n",
-    "\n",
-    "    def valid_message(text):\n",
-    "        return bool(text.strip())\n",
-    "    \n",
-    "    #проверка не остался после чистки текст пустой\n",
-    "    if not valid_message(text):\n",
-    "        return None\n",
-    "\n",
-    "    #наш результат\n",
-    "    return {\n",
-    "        \"id\": msg.get(\"id\"),\n",
-    "        \"date\": msg.get(\"date\"),\n",
-    "        \"text\": text\n",
-    "    }\n",
-    "\n",
-    "\n",
-    "# ----------------------------\n",
-    "# Обработка всего списка\n",
-    "# ----------------------------\n",
-    "def clear_data(messages):\n",
-    "    cleaned = []\n",
-    "\n",
-    "    for msg in messages:\n",
-    "        processed = process_message(msg)\n",
-    "        if processed:\n",
-    "            cleaned.append(processed)\n",
-    "\n",
-    "    return cleaned"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "08a8d277-62cb-4e72-9800-1b04ff90883b",
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3 (ipykernel)",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.13.5"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}
+import re
+import emoji
+
+def remove_emoji(text):
+    return emoji.replace_emoji(text, replace='')
+
+    
+# ----------------------------
+# Очистка текста
+# ----------------------------
+def clean_text(text):
+    if not text:
+        return ""
+
+    # удалить эмодзи
+    text = remove_emoji(text)
+
+    # нижний регистр
+    text = text.lower()
+
+    # убрать переносы строк
+    text = re.sub(r'\n+', ' ', text)
+
+    # убрать повторяющиеся символы (!!! → !)
+    text = re.sub(r'([!?.,])\1+', r'\1', text)
+
+    # убрать лишние пробелы
+    text = re.sub(r'\s+', ' ', text).strip()
+
+    return text
+
+
+# ----------------------------
+# Замена сущностей
+# ----------------------------
+def replace_entities(text):
+    if not text:
+        return ""
+
+    # ссылки
+    text = re.sub(r'http\S+', '[LINK]', text)
+
+    # email
+    text = re.sub(r'\S+@\S+', '[EMAIL]', text)
+
+    # файлы (примерно)
+    text = re.sub(r'\S+\.(pdf|docx|zip|png|jpg)', '[FILE]', text)
+
+    return text
+
+
+# ----------------------------
+# Обработка одного сообщения
+# ----------------------------
+def process_message(msg):
+    #извлекаем текст из поля
+    text = msg.get("text", "")
+
+    #проверка явл ли текст строко, если нет меняем на строку
+    if not isinstance(text, str):
+        text = str(text)
+
+    #чистим текст
+    text = replace_entities(text)
+    text = clean_text(text)
+
+    def valid_message(text):
+        return bool(text.strip())
+    
+    #проверка не остался после чистки текст пустой
+    if not valid_message(text):
+        return None
+
+    #наш результат
+    return {
+        "id": msg.get("id"),
+        "date": msg.get("date"),
+        "text": text
+    }
+
+
+# ----------------------------
+# Обработка всего списка
+# ----------------------------
+def clear_data(messages):
+    cleaned = []
+
+    for msg in messages:
+        processed = process_message(msg)
+        if processed:
+            cleaned.append(processed)
+
+    return cleaned
