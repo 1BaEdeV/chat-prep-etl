@@ -1,16 +1,38 @@
 import asyncio
 import time
+from qdrant_client import QdrantClient
+from qdrant_client.http import models
 
-from src.etl.dbconfig import url, api_key, collection_name
-from src.etl.internal.Adapter.repository import QdrantFastEmbedRepository
+from src.etl.dbconfig import url, api_key, collection_name, test_collection_name
+from src.etl.internal.adapter.repository import QdrantFastEmbedRepository
 from src.etl.internal.domain.value_objects import MessageMetadata
 
 
 async def test():
     URL = url
     API_KEY = api_key
-    COLLECTION = collection_name
-    repo = QdrantFastEmbedRepository(URL, API_KEY, COLLECTION)
+    COLLECTION_NAME = test_collection_name
+
+    client = QdrantClient(url=URL, api_key=API_KEY)
+
+    if client.collection_exists(collection_name=COLLECTION_NAME):
+        client.delete_collection(collection_name=COLLECTION_NAME)
+
+    client.create_collection(
+        collection_name=COLLECTION_NAME,
+        vectors_config=models.VectorParams(
+            size=384,
+            distance=models.Distance.COSINE
+        ),
+        on_disk_payload=True
+    )
+    client.create_payload_index(
+        collection_name=COLLECTION_NAME,
+        field_name="chat_id",
+        field_schema=models.PayloadSchemaType.INTEGER,
+    )
+
+    repo = QdrantFastEmbedRepository(URL, API_KEY, COLLECTION_NAME)
 
     extra_messages = [
         # Чат 101 - Техническая поддержка (RU/EN)
