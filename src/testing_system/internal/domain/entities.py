@@ -48,8 +48,8 @@ class Experiment:
     id: str
     name: str
     config: Dict[str, Any]
-    questions: List[Question]
-    answers: List[Answer]
+    question: List[Question]
+    answer: List[Answer]
     metrics: List[MetricValue]
     started_at: datetime
     finished_at: Optional[datetime] = None
