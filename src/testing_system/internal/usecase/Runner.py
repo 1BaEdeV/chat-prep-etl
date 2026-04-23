@@ -2,6 +2,7 @@ import asyncio
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import logging
 from typing import Any, Dict, List, Optional
+from datetime import datetime, timezone
 
 from testing_system.internal.domain.entities import Answer, Experiment, MetricValue, Question
 from testing_system.internal.domain.interfaces import \
@@ -60,7 +61,7 @@ class Runner:
         )
     
     def _run_eval(self, q: Question, a: Answer) -> List[MetricValue]:
-        return self.eval.execute()
+        return self.eval.execute(q, a)
 
     async def _process_worker(self, executor):
         while True:
@@ -82,7 +83,9 @@ class Runner:
                 loop = asyncio.get_running_loop()
                 evaluated = await loop.run_in_executor(executor, self._run_eval, q, a)
                 self.logger.info(f"Query {q.id} completed")
-                self.experiment.add_metric(evaluated)
+                
+                for m in evaluated:
+                    self.experiment.add_metric(m)
             except Exception as e:
                 self.logger.error(f"Eval failed for query {q.id}: {e}")
             finally:
@@ -117,6 +120,10 @@ class Runner:
 
         self.experiment = experiment
 
+        #start_time
+        self.experiment.started_at = datetime.now(timezone.utc)
+        
+
         for q in self.experiment.questions:
             await self.process_queue.put(q)
 
@@ -142,3 +149,7 @@ class Runner:
             for task in process_tasks + eval_tasks:
                 task.cancel()
             await asyncio.gather(*process_tasks, *eval_tasks, return_exceptions=True)
+
+        #end_time
+        self.experiment.finished_at = datetime.now(timezone.utc)
+        return self.experiment
