@@ -1,5 +1,4 @@
 from typing import Any, List
-from telethon.tl.patched import Message
 from src.etl.internal.domain.interfaces import IParser
 from src.etl.internal.domain.value_objects import MessageMetadata
 from telethon import TelegramClient
@@ -18,7 +17,7 @@ class TelegramGrabber:
         # Получаем сообщения
         async for message in self.client.iter_messages(chat_entity, limit=limit):
             # Передаем client в парсер, если нужно качать медиа
-            metadata = await self.parser.parse_message(message, download=True)
+            metadata = await self.parser.parse_message(message)
             results.append(metadata)
         
         return results
@@ -28,14 +27,12 @@ class TelegramParser(IParser):
     def __init__(self, client: TelegramClient):
         self.client = client
 
-    async def parse_message(self, event: Any, download: bool = False) -> MessageMetadata:
+    async def parse_message(self, event: Any) -> MessageMetadata:
         msg = event
         text = msg if isinstance(msg, str) else getattr(msg, 'message', "")
         chat_id = getattr(msg, 'chat_id', 0)
         sender_id = getattr(msg, 'sender_id', 0)
         attached_files = []
-        if hasattr(msg, 'media') and msg.media:
-            attached_files.append("media_detected")
         if hasattr(msg, 'media') and msg.media:
             file_path = f"media/{chat_id}/{msg.id}"
             path = await self.client.download_media(msg, file=file_path)

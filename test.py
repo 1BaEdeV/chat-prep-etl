@@ -1,5 +1,5 @@
 import json
-from telethon import TelegramClient, events
+from telethon import TelegramClient
 import socks
 import asyncio
 from dotenv import load_dotenv
@@ -11,7 +11,7 @@ load_dotenv()
 api_id = int(os.getenv('TELEGRAM_API_ID'))  
 api_hash = os.getenv('TELEGRAM_API_HASH')  
 session_name = os.getenv('SESSION')
-chat_username =  "https://t.me/saryeva1"
+chat_username =  "https://t.me/..."
 
 proxy = (socks.SOCKS5, '127.0.0.1', 10808)        
 
@@ -19,15 +19,13 @@ async def debug_run():
     client = TelegramClient(session_name, api_id, api_hash, proxy=proxy)
     parser = TelegramParser(client)
     grabber = TelegramGrabber(client, parser)
-    
-    # Grabber уже вернул список MessageMetadata
+
     messages = await grabber.grab_chat(chat_username, limit=10)
     
     print(f"--- Результаты парсинга ({len(messages)} шт.) ---")
     
     for metadata in messages:
         print("\n" + "="*30)
-        # Обращаемся напрямую к атрибутам MessageMetadata
         print(f"Parsed Chat ID: {metadata.chat_id}")
         print(f"Текст: {metadata.text[:50]}...") 
         print(f"Пути к файлам: {metadata.attached_files}")
