@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Any
 
 from src.etl.internal.domain.value_objects import MessageMetadata
 
@@ -36,5 +36,33 @@ class IRepository(ABC):
 
         Returns:
             List[MessageMetadata]: Список найденных сообщений, отсортированных по релевантности.
+        """
+        pass
+
+
+
+class IParser(ABC):
+    """
+    Интерфейс для преобразования сырых данных из внешних источников 
+    в доменную сущность MessageMetadata.
+    """
+
+    @abstractmethod
+    def parse_message(self, raw_event: Any) -> MessageMetadata:
+        """
+        Парсит одно входящее событие (например, NewMessage от Telethon).
+        
+        Args:
+            raw_event: Объект сообщения из библиотеки-адаптера.
+            
+        Returns:
+            MessageMetadata: Очищенные и структурированные данные.
+        """
+        pass
+
+    @abstractmethod
+    def parse_batch(self, raw_events: List[Any]) -> List[MessageMetadata]:
+        """
+        Пакетный парсинг списка событий (например, при докачке истории).
         """
         pass
