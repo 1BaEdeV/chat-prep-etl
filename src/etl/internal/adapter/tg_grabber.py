@@ -2,9 +2,33 @@ from typing import Any, List
 from telethon.tl.patched import Message
 from src.etl.internal.domain.interfaces import IParser
 from src.etl.internal.domain.value_objects import MessageMetadata
+from telethon import TelegramClient
+
+class TelegramGrabber:
+    def __init__(self, client: TelegramClient, parser: IParser):
+        self.client = client
+        self.parser = parser
+
+    async def grab_chat(self, chat_entity: str, limit: int = 10):
+        # Убеждаемся, что клиент запущен
+        if not self.client.is_connected():
+            await self.client.start()
+
+        results = []
+        # Получаем сообщения
+        async for message in self.client.iter_messages(chat_entity, limit=limit):
+            # Передаем client в парсер, если нужно качать медиа
+            metadata = await self.parser.parse_message(message, download=True)
+            results.append(metadata)
+        
+        return results
+
 
 class TelegramParser(IParser):
-    def parse_message(self, event: Any) -> MessageMetadata:
+    def __init__(self, client: TelegramClient):
+        self.client = client
+
+    async def parse_message(self, event: Any, download: bool = False) -> MessageMetadata:
         msg = event
         text = msg if isinstance(msg, str) else getattr(msg, 'message', "")
         chat_id = getattr(msg, 'chat_id', 0)
@@ -12,6 +36,10 @@ class TelegramParser(IParser):
         attached_files = []
         if hasattr(msg, 'media') and msg.media:
             attached_files.append("media_detected")
+        if hasattr(msg, 'media') and msg.media:
+            file_path = f"media/{chat_id}/{msg.id}"
+            path = await self.client.download_media(msg, file=file_path)
+            attached_files.append(path)
         return MessageMetadata(
             chat_id=chat_id,
             sender_id=sender_id,
@@ -19,5 +47,5 @@ class TelegramParser(IParser):
             attached_files=attached_files
         )
 
-    def parse_batch(self, raw_events: List[Any]) -> List[MessageMetadata]:
-        return [self.parse_message(e) for e in raw_events]
+    async def parse_batch(self, raw_events: List[Any]) -> List[MessageMetadata]:
+        return [await self.parse_message(e) for e in raw_events]
