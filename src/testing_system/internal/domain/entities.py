@@ -61,4 +61,4 @@ class Experiment:
         self.metrics.append(metric)
 
     def is_complete(self) -> bool:
-        return len(self.answers) == len(self.questions) and len(self.metrics) == len(self.questions)
+        return len(self.answers) == len(self.questions)

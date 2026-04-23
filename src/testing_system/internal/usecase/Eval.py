@@ -38,7 +38,7 @@ class Eval:
         )
 
         if q.retrieved_context_id and a.retrieved_context:
-            relevant_found = set(q.retrieved_context_id) & (a.retrieved_context)
+            relevant_found = set(q.retrieved_context_id) & set(a.retrieved_context)
 
             #precision
             #кол-во правильных из всех найденных
