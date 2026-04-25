@@ -1,15 +1,13 @@
 import asyncio
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import logging
-from typing import Any, Dict, List, Optional
+from typing import List
 from datetime import datetime, timezone
 
 from testing_system.internal.domain.entities import Answer, Experiment, MetricValue, Question
 from testing_system.internal.domain.interfaces import \
     IAssistant, IRetriever, IRegistry
-from testing_system.internal.domain.value_objects import AssistantResponse, \
-    AssistantRequest, RetrievalRequest, RetrievalResponse
-from testing_system.internal.usecase import Eval
+from testing_system.internal.usecase.Eval import Eval
 from testing_system.internal.usecase.ProcessQuery import Processor
 
 

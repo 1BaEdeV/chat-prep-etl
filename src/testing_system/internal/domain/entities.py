@@ -3,6 +3,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Any, Dict
 
+from testing_system.internal.domain.value_objects import AdapterConfig, PromptConfig
+
 @dataclass
 class Question:
     """
@@ -12,6 +14,19 @@ class Question:
     id: str
     text: str
     retrieved_context_id: Optional[List[str]] = None # for RECALL
+    metadata: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class ExperimentConfig:
+    """The configuration that describes what experiment should be run."""
+    id: str
+    name: str
+    assistant: AdapterConfig
+    retriever: AdapterConfig
+    prompt: PromptConfig
+    questions: List[Question]
+    metrics: List[str]
     metadata: Optional[Dict[str, Any]] = None
 
 @dataclass
@@ -42,16 +57,15 @@ class MetricValue:
 @dataclass
 class Experiment:
     """
-    The main entity for the system - experiment
-    Provides all the methods and attributes for storage and comparison
+    The completed or running experiment with execution results.
     """
     id: str
     name: str
-    config: Dict[str, Any]
-    question: List[Question]
-    answer: List[Answer]
+    config: ExperimentConfig
+    questions: List[Question]
+    answers: List[Answer]
     metrics: List[MetricValue]
-    started_at: datetime
+    started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
 
     def add_answer(self, answer: Answer) -> None:
@@ -61,4 +75,7 @@ class Experiment:
         self.metrics.append(metric)
 
     def is_complete(self) -> bool:
-        return len(self.answers) == len(self.questions) and len(self.metrics) == len(self.questions)
+        return (
+            len(self.answers) == len(self.questions)
+            and len(self.metrics) >= len(self.questions)
+        )
