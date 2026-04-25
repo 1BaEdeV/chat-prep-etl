@@ -1,6 +1,21 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+
+@dataclass(frozen=True)
+class AdapterConfig:
+    """Declarative adapter selection and constructor parameters."""
+    name: str
+    params: Dict[str, Any]
+
+
+@dataclass(frozen=True)
+class PromptConfig:
+    """Prompt source resolved from experiment configuration."""
+    text: Optional[str] = None
+    path: Optional[str] = None
+
+
 @dataclass
 class RetrievedDocument:
     """

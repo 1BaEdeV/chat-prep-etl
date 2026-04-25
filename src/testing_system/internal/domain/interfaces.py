@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 from testing_system.internal.domain.value_objects import \
     AssistantRequest, AssistantResponse, \
     RetrievalResponse, RetrievalRequest
@@ -31,7 +31,7 @@ class IRegistry(ABC):
         pass
 
     @abstractmethod
-    def check(self, experiment: Experiment) -> Experiment:
+    def check(self, experiment: Experiment) -> Optional[Experiment]:
         """
         Checks the originality of the experiment`s configuration.
         not-None - exists, don`t repeat
