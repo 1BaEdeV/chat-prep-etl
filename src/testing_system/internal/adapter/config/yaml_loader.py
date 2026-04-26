@@ -36,21 +36,21 @@ class YamlConfigLoader:
         with path.open("r", encoding="utf-8") as file:
             loaded = yaml.safe_load(file) or {}
         if not isinstance(loaded, dict):
-            raise ValueError()
+            raise ValueError(f"Expected a YAML mapping at the top level, got {type(loaded).__name__}: {path}")
         return loaded
 
     def _adapter_config(self, data: Dict[str, Any], key: str) -> AdapterConfig:
         raw = data.get(key)
         if not isinstance(raw, dict):
-            raise ValueError()
+            raise ValueError(f"Config section '{key}' must be a mapping, got {type(raw).__name__}")
 
         name = raw.get("adapter") or raw.get("name")
         if not name:
-            raise ValueError()
+            raise ValueError(f"Config section '{key}' must specify an 'adapter' or 'name' field")
 
         params = raw.get("params", {})
         if not isinstance(params, dict):
-            raise ValueError()
+            raise ValueError(f"'params' in section '{key}' must be a mapping, got {type(params).__name__}")
 
         return AdapterConfig(name=name, params=params)
 

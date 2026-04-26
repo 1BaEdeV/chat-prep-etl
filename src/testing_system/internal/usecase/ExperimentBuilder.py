@@ -56,7 +56,7 @@ class ExperimentBuilder:
 
             return OllamaAssistant(**params)
 
-        raise ValueError()
+        raise ValueError(f"Unsupported assistant adapter: '{config.name}'")
 
     def _build_retriever(self, config: AdapterConfig) -> IRetriever:
         if config.name == "mock":
@@ -65,7 +65,7 @@ class ExperimentBuilder:
             documents = self._documents(config.params.get("documents", []))
             return MockRetriever(documents=documents)
 
-        raise ValueError()
+        raise ValueError(f"Unsupported retriever adapter: '{config.name}'")
 
     def _build_registry(self) -> IRegistry:
         return InMemoryRegistry()
